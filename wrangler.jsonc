@@ -1,0 +1,8 @@
+{
+  "name": "speechrun",
+  "main": "./worker/index.ts",
+  "compatibility_date": "2026-03-17",
+  "assets": {
+    "not_found_handling": "single-page-application"
+  }
+}
