@@ -4,8 +4,11 @@ import AsciiLogo from './components/AsciiLogo'
 import ContextSidebar from './components/ContextSidebar'
 import ConversationPanel from './components/ConversationPanel'
 import SandboxPanel from './components/SandboxPanel'
+import { usePodcast } from './hooks/use-podcast'
 
 function App() {
+  const { state, startGeneration, isConnected } = usePodcast()
+
   return (
     <div className="font-mono">
       <TerminalChrome>
@@ -15,11 +18,17 @@ function App() {
         <div className="flex-1 flex min-h-0 border-t border-terminal-border">
           {/* Left - Context Sidebar */}
           <div className="w-[20%] border-r border-terminal-border">
-            <ContextSidebar />
+            <ContextSidebar context={state.context} />
           </div>
           {/* Center - Conversation */}
           <div className="w-[50%] border-r border-terminal-border">
-            <ConversationPanel />
+            <ConversationPanel
+              turns={state.turns}
+              status={state.status}
+              error={state.error}
+              isConnected={isConnected}
+              onSubmit={startGeneration}
+            />
           </div>
           {/* Right - Sandbox */}
           <div className="w-[30%]">
