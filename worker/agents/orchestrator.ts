@@ -1,7 +1,8 @@
 import { Agent, callable } from 'agents'
-import type { Env, OrchestratorState, ContextData, GenerationResult } from '../types'
+import type { Env, OrchestratorState, ContextData, DialogueTurn, GenerationResult } from '../types'
 import { parseGithubUrl, fetchRepoMetadata, fetchFileTree, fetchMultipleFiles } from '../utils/github-client'
 import { selectKeyFiles } from '../utils/file-selector'
+import { TOPIC_GENERATION_PROMPT } from '../utils/prompts'
 
 export class Orchestrator extends Agent<Env, OrchestratorState> {
   initialState: OrchestratorState = {
@@ -37,9 +38,12 @@ export class Orchestrator extends Agent<Env, OrchestratorState> {
       // Step 6: Generate context via Workers AI
       const context = await this.generateContext(metadata, fileTree, keyFiles)
 
-      this.setState({ ...this.state, context, status: 'idle' })
+      this.setState({ ...this.state, context })
 
-      return { success: true, turnCount: 0 }
+      // Step 7: Run multi-agent dialogue
+      await this.runDialogue()
+
+      return { success: true, turnCount: this.state.turns.length }
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Unknown error'
       this.setState({ ...this.state, status: 'error', error: message })
@@ -107,5 +111,85 @@ Keep the analysis focused and opinionated — this will fuel a PM vs Developer d
       keyFiles,
       generatedAt: new Date().toISOString(),
     }
+  }
+
+  private async runDialogue(): Promise<void> {
+    this.setState({ ...this.state, status: 'dialoguing' })
+
+    const topics = await this.generateTopics()
+
+    for (const topic of topics) {
+      // Nova speaks first
+      const novaTurn = await this.callAgentWithRetry('nova', topic)
+      if (novaTurn) {
+        this.setState({ ...this.state, turns: [...this.state.turns, novaTurn] })
+      }
+
+      // Aero responds
+      const aeroTurn = await this.callAgentWithRetry('aero', topic)
+      if (aeroTurn) {
+        this.setState({ ...this.state, turns: [...this.state.turns, aeroTurn] })
+      }
+    }
+  }
+
+  private async callAgentWithRetry(
+    agent: 'nova' | 'aero',
+    topic: string,
+  ): Promise<DialogueTurn | null> {
+    const namespace = agent === 'nova' ? this.env.NOVA : this.env.AERO
+    const id = namespace.idFromName(`${agent}-${this.name}`)
+    const stub = namespace.get(id)
+
+    const input = {
+      topic,
+      context: this.state.context!,
+      previousTurns: this.state.turns,
+    }
+
+    for (let attempt = 0; attempt < 2; attempt++) {
+      try {
+        // Call the agent's generateTurn via fetch (DO RPC)
+        const response = await stub.fetch(new Request('http://internal/callable/generateTurn', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify([input]),
+        }))
+
+        if (!response.ok) {
+          throw new Error(`Agent ${agent} returned ${response.status}`)
+        }
+
+        return await response.json() as DialogueTurn
+      } catch (error) {
+        if (attempt === 1) {
+          console.error(`Agent ${agent} failed after retry: ${error instanceof Error ? error.message : error}`)
+          return null
+        }
+      }
+    }
+    return null
+  }
+
+  private async generateTopics(): Promise<string[]> {
+    const response = await this.env.AI.run(
+      '@cf/meta/llama-3.1-70b-instruct' as keyof AiModels,
+      {
+        messages: [
+          { role: 'system', content: TOPIC_GENERATION_PROMPT },
+          { role: 'user', content: this.state.context!.summary },
+        ],
+      } as Record<string, unknown>,
+    )
+
+    const text = typeof response === 'object' && 'response' in response
+      ? (response as { response: string }).response
+      : String(response)
+
+    return text
+      .split('\n')
+      .map((t: string) => t.trim())
+      .filter((t: string) => t.length > 0)
+      .slice(0, 5)
   }
 }
