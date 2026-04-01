@@ -26,6 +26,11 @@ Tasks currently being worked on or up next.
 
 | # | Status | Task | Feature | Notes |
 |---|--------|------|---------|-------|
+| T33 | `[ ]` | Rewrite context-generator.ts for StructuredContext schema | [panel-redesign](../features/panel-redesign.md) | Wave 1 — backend foundation |
+| T34 | `[ ]` | Update DO schema: add feature_id + topic_type columns | [panel-redesign](../features/panel-redesign.md) | Wave 1 |
+| T35 | `[ ]` | Rewrite dialogue-orchestrator.ts for feature-anchored topics | [panel-redesign](../features/panel-redesign.md) | Wave 1 |
+| T36 | `[ ]` | Update turn-generator.ts: feature context in prompts | [panel-redesign](../features/panel-redesign.md) | Wave 2 |
+| T37 | `[ ]` | Update turn-coordinator.ts: complexity-based distribution | [panel-redesign](../features/panel-redesign.md) | Wave 2 |
 
 ---
 
@@ -35,6 +40,14 @@ Tasks that are planned but not started yet. Ordered by priority.
 
 | # | Status | Task | Feature | Notes |
 |---|--------|------|---------|-------|
+| T38 | `[ ]` | Update worker/index.ts: wire feature data through pipeline | [panel-redesign](../features/panel-redesign.md) | Wave 2 |
+| T39 | `[ ]` | Update App.tsx: expand AppState with outline, progressLog, activeFeatureId | [panel-redesign](../features/panel-redesign.md) | Wave 3 |
+| T40 | `[ ]` | Build ContextPanel.tsx: collapsible tree with feature highlighting | [panel-redesign](../features/panel-redesign.md) | Wave 3 |
+| T41 | `[ ]` | Build OperationsPanel.tsx: progress log, features status, active workers | [panel-redesign](../features/panel-redesign.md) | Wave 3 |
+| T42 | `[ ]` | Update ConversationPanel.tsx: feature section headers | [panel-redesign](../features/panel-redesign.md) | Wave 3 |
+| T43 | `[ ]` | Update TabNav.tsx: rename Sandbox to Operations | [panel-redesign](../features/panel-redesign.md) | Wave 3 |
+| T29 | `[>]` | Add WebSocket turn-push to DO | [multi-agent-dialogue](../features/multi-agent-dialogue.md) | Deferred |
+| T30 | `[>]` | Add rate limiting to POST /api/generate-dialogue | [multi-agent-dialogue](../features/multi-agent-dialogue.md) | Deferred |
 
 ---
 
@@ -65,6 +78,24 @@ Finished tasks — kept for reference and audit trail.
 | T9 | Build AudioPlayer skeleton | [ascii-terminal-ui](../features/ascii-terminal-ui.md) | 2026-03-28 |
 | T10 | Build SandboxPanel skeleton | [ascii-terminal-ui](../features/ascii-terminal-ui.md) | 2026-03-28 |
 | T11 | Compose all components into App.tsx | [ascii-terminal-ui](../features/ascii-terminal-ui.md) | 2026-03-28 |
+| T12 | Create `wrangler.toml` with DO, R2, AI bindings | [codebase-ingestion](../features/codebase-ingestion.md) | 2026-04-01 |
+| T13 | Create Workers entry point (`worker/index.ts`) with request router | [codebase-ingestion](../features/codebase-ingestion.md) | 2026-04-01 |
+| T14 | Create SpeechRunSession Durable Object with SQLite schema | [codebase-ingestion](../features/codebase-ingestion.md) | 2026-04-01 |
+| T15 | Implement GitHub URL parser and validator | [codebase-ingestion](../features/codebase-ingestion.md) | 2026-04-01 |
+| T16 | Implement GitHub repo tree fetcher | [codebase-ingestion](../features/codebase-ingestion.md) | 2026-04-01 |
+| T17 | Implement key file selector | [codebase-ingestion](../features/codebase-ingestion.md) | 2026-04-01 |
+| T18 | Implement file content fetcher | [codebase-ingestion](../features/codebase-ingestion.md) | 2026-04-01 |
+| T19 | Implement Workers AI context generator | [codebase-ingestion](../features/codebase-ingestion.md) | 2026-04-01 |
+| T20 | Wire full ingestion pipeline into POST /api/ingest | [codebase-ingestion](../features/codebase-ingestion.md) | 2026-04-01 |
+| T21 | Add server-side rate limiting to POST /api/ingest | [codebase-ingestion](../features/codebase-ingestion.md) | 2026-04-01 (deferred) |
+| T22 | Connect frontend to POST /api/ingest with loading/error states | [codebase-ingestion](../features/codebase-ingestion.md) | 2026-04-01 |
+| T23 | Extend DO SQLite schema: dialogue_outline + dialogue_turns tables | [multi-agent-dialogue](../features/multi-agent-dialogue.md) | 2026-04-01 |
+| T24 | Implement dialogue orchestrator (topic outline generation) | [multi-agent-dialogue](../features/multi-agent-dialogue.md) | 2026-04-01 |
+| T25 | Implement Nova turn generator (PM persona) | [multi-agent-dialogue](../features/multi-agent-dialogue.md) | 2026-04-01 |
+| T26 | Implement Aero turn generator (Dev persona) | [multi-agent-dialogue](../features/multi-agent-dialogue.md) | 2026-04-01 |
+| T27 | Implement turn coordinator (schedule ~24 turns across topics) | [multi-agent-dialogue](../features/multi-agent-dialogue.md) | 2026-04-01 |
+| T28 | Implement POST /api/generate-dialogue route handler | [multi-agent-dialogue](../features/multi-agent-dialogue.md) | 2026-04-01 |
+| T31 | Wire frontend ConversationPanel to display dialogue turns | [multi-agent-dialogue](../features/multi-agent-dialogue.md) | 2026-04-01 |
 
 ---
 

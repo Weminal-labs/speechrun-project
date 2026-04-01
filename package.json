@@ -4,9 +4,13 @@
   "version": "0.1.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "build": "tsc -b && vite build",
-    "preview": "vite preview"
+    "dev": "vite dev",
+    "build": "vite build",
+    "preview": "vite preview",
+    "deploy": "vite build && wrangler deploy",
+    "typecheck": "tsc -b",
+    "typecheck:worker": "tsc --project tsconfig.worker.json --noEmit",
+    "typecheck:app": "tsc --project tsconfig.app.json --noEmit"
   },
   "dependencies": {
     "@fontsource/jetbrains-mono": "^5.2.8",
@@ -14,12 +18,15 @@
     "react-dom": "^19.2.4"
   },
   "devDependencies": {
+    "@cloudflare/vite-plugin": "^1.30.3",
+    "@cloudflare/workers-types": "^4.20260401.1",
     "@tailwindcss/vite": "^4.2.2",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^6.0.1",
     "tailwindcss": "^4.2.2",
     "typescript": "^6.0.2",
-    "vite": "^8.0.3"
+    "vite": "^8.0.3",
+    "wrangler": "^4.79.0"
   }
 }
