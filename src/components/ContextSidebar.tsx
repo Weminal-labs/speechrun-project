@@ -2,6 +2,8 @@ import type { ContextData } from '../hooks/use-podcast'
 
 interface ContextSidebarProps {
   context: ContextData | null
+  selectedFile?: string | null
+  onClearFile?: () => void
 }
 
 const PLACEHOLDER_SECTIONS = [
@@ -11,23 +13,17 @@ const PLACEHOLDER_SECTIONS = [
   { name: 'design/', items: ['DESIGN_SYSTEM.md'] },
 ]
 
-export default function ContextSidebar({ context }: ContextSidebarProps) {
+export default function ContextSidebar({ context, selectedFile, onClearFile }: ContextSidebarProps) {
   if (!context) {
     return (
       <div className="h-full overflow-y-auto p-4">
-        <div className="text-terminal-accent text-sm mb-3">
-          .: context
-        </div>
+        <div className="text-terminal-accent text-sm mb-3">.: context</div>
         <div className="space-y-3">
           {PLACEHOLDER_SECTIONS.map((section) => (
             <div key={section.name}>
-              <div className="text-terminal-text text-xs font-medium mb-1">
-                {section.name}
-              </div>
+              <div className="text-terminal-text text-xs font-medium mb-1">{section.name}</div>
               {section.items.map((item) => (
-                <div key={item} className="text-terminal-dim text-xs pl-3 py-0.5">
-                  .: {item}
-                </div>
+                <div key={item} className="text-terminal-dim text-xs pl-3 py-0.5">.: {item}</div>
               ))}
             </div>
           ))}
@@ -36,56 +32,58 @@ export default function ContextSidebar({ context }: ContextSidebarProps) {
     )
   }
 
+  // File content view — when a file reference is clicked in transcript
+  if (selectedFile && context.keyFiles[selectedFile]) {
+    return (
+      <div className="h-full overflow-y-auto p-4">
+        <div className="flex items-center justify-between mb-3">
+          <div className="text-terminal-accent text-sm truncate">{selectedFile}</div>
+          <button
+            onClick={onClearFile}
+            className="text-terminal-dim text-xs hover:text-terminal-text shrink-0 ml-2"
+          >
+            [x]
+          </button>
+        </div>
+        <pre className="text-terminal-dim text-xs leading-relaxed whitespace-pre-wrap break-all">
+          {context.keyFiles[selectedFile]}
+        </pre>
+      </div>
+    )
+  }
+
+  // Default: analysis overview
   return (
     <div className="h-full overflow-y-auto p-4">
-      <div className="text-terminal-accent text-sm mb-3">
-        .: {context.repoName}
-      </div>
+      <div className="text-terminal-accent text-sm mb-3">.: {context.repoName}</div>
 
-      {/* Summary */}
       <div className="mb-4">
         <div className="text-terminal-text text-xs font-medium mb-1">.: analysis</div>
         <div className="text-terminal-dim text-xs leading-relaxed pl-3">
-          {context.summary.length > 500
-            ? context.summary.slice(0, 500) + '...'
-            : context.summary}
+          {context.summary.length > 500 ? context.summary.slice(0, 500) + '...' : context.summary}
         </div>
       </div>
 
-      {/* File tree */}
       <div className="mb-4">
-        <div className="text-terminal-text text-xs font-medium mb-1">
-          .: files ({context.fileTree.length})
-        </div>
+        <div className="text-terminal-text text-xs font-medium mb-1">.: files ({context.fileTree.length})</div>
         <div className="max-h-48 overflow-y-auto">
           {context.fileTree.slice(0, 40).map((f) => (
-            <div key={f} className="text-terminal-dim text-xs pl-3 py-0.5 truncate" title={f}>
-              {f}
-            </div>
+            <div key={f} className="text-terminal-dim text-xs pl-3 py-0.5 truncate" title={f}>{f}</div>
           ))}
           {context.fileTree.length > 40 && (
-            <div className="text-terminal-dim/50 text-xs pl-3 py-0.5">
-              ... +{context.fileTree.length - 40} more
-            </div>
+            <div className="text-terminal-dim/50 text-xs pl-3 py-0.5">... +{context.fileTree.length - 40} more</div>
           )}
         </div>
       </div>
 
-      {/* Key files analyzed */}
       <div>
-        <div className="text-terminal-text text-xs font-medium mb-1">
-          .: analyzed ({Object.keys(context.keyFiles).length} files)
-        </div>
+        <div className="text-terminal-text text-xs font-medium mb-1">.: analyzed ({Object.keys(context.keyFiles).length} files)</div>
         {Object.keys(context.keyFiles).map((f) => (
-          <div key={f} className="text-terminal-accent/70 text-xs pl-3 py-0.5 truncate" title={f}>
-            {f}
-          </div>
+          <div key={f} className="text-terminal-accent/70 text-xs pl-3 py-0.5 truncate" title={f}>{f}</div>
         ))}
       </div>
 
-      <div className="mt-4 text-terminal-dim/50 text-[10px]">
-        generated {context.generatedAt}
-      </div>
+      <div className="mt-4 text-terminal-dim/50 text-[10px]">generated {context.generatedAt}</div>
     </div>
   )
 }

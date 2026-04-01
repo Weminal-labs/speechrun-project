@@ -7,6 +7,28 @@ interface ConversationPanelProps {
   error: string | null
   isConnected: boolean
   onSubmit: (url: string) => void
+  onFileClick?: (filePath: string) => void
+}
+
+// Parse backtick-wrapped file references into clickable spans
+function renderTurnText(text: string, onFileClick?: (f: string) => void) {
+  const parts = text.split(/(`[^`]+`)/g)
+  return parts.map((part, i) => {
+    const match = part.match(/^`(.+)`$/)
+    if (match) {
+      const filePath = match[1]
+      return (
+        <button
+          key={i}
+          onClick={() => onFileClick?.(filePath)}
+          className="text-terminal-accent underline underline-offset-2 decoration-terminal-accent/40 hover:decoration-terminal-accent cursor-pointer bg-terminal-accent/10 px-1 rounded"
+        >
+          {filePath}
+        </button>
+      )
+    }
+    return <span key={i}>{part}</span>
+  })
 }
 
 const STATUS_LABELS: Record<string, string> = {
@@ -20,7 +42,7 @@ const STATUS_LABELS: Record<string, string> = {
 }
 
 export default function ConversationPanel({
-  turns, status, error, isConnected, onSubmit,
+  turns, status, error, isConnected, onSubmit, onFileClick,
 }: ConversationPanelProps) {
   const [url, setUrl] = useState('')
   const [currentAudioIndex, setCurrentAudioIndex] = useState(-1)
@@ -108,7 +130,7 @@ export default function ConversationPanel({
               {turn.audioUrl && <span className="text-terminal-dim ml-1">♪</span>}
             </div>
             <div className="text-terminal-text text-sm leading-relaxed pl-2 border-l border-terminal-border/50">
-              {turn.text}
+              {renderTurnText(turn.text, onFileClick)}
             </div>
           </div>
         ))}
