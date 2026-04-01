@@ -3,7 +3,7 @@ import type { Env, OrchestratorState, ContextData, DialogueTurn, GenerationResul
 import { parseGithubUrl, fetchRepoMetadata, fetchFileTree, fetchMultipleFiles } from '../utils/github-client'
 import { selectKeyFiles } from '../utils/file-selector'
 import { NOVA_SYSTEM_PROMPT, AERO_SYSTEM_PROMPT, TOPIC_GENERATION_PROMPT, buildTurnPrompt } from '../utils/prompts'
-import { generateSpeech, uploadAudioToR2 } from '../utils/elevenlabs-client'
+import { generateSpeech } from '../utils/elevenlabs-client'
 
 export class Orchestrator extends Agent<Env, OrchestratorState> {
   initialState: OrchestratorState = {
@@ -186,14 +186,13 @@ Keep the analysis focused and opinionated — this will fuel a PM vs Developer d
   }
 
   private async generateAudio(): Promise<void> {
-    if (!this.env.ELEVENLABS_API_KEY || !this.env.AUDIO_BUCKET) {
+    if (!this.env.ELEVENLABS_API_KEY) {
       this.setState({ ...this.state, status: 'complete' })
       return
     }
 
     this.setState({ ...this.state, status: 'generating-audio' })
 
-    const sessionId = this.name
     const updatedTurns = [...this.state.turns]
 
     for (let i = 0; i < updatedTurns.length; i++) {
@@ -205,14 +204,15 @@ Keep the analysis focused and opinionated — this will fuel a PM vs Developer d
           apiKey: this.env.ELEVENLABS_API_KEY,
         })
 
-        const key = await uploadAudioToR2(
-          this.env.AUDIO_BUCKET!,
-          sessionId,
-          i,
-          audioData,
-        )
+        // Convert to base64 data URI — no R2 needed
+        const bytes = new Uint8Array(audioData)
+        let binary = ''
+        for (let j = 0; j < bytes.length; j++) {
+          binary += String.fromCharCode(bytes[j])
+        }
+        const base64 = btoa(binary)
 
-        updatedTurns[i] = { ...turn, audioUrl: `/api/audio/${key}` }
+        updatedTurns[i] = { ...turn, audioUrl: `data:audio/mpeg;base64,${base64}` }
         this.setState({ ...this.state, turns: updatedTurns })
       } catch (error) {
         console.error(`TTS failed for turn ${i}: ${error instanceof Error ? error.message : error}`)
