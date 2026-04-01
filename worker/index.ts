@@ -13,6 +13,22 @@ export default {
       return Response.json({ status: 'ok', version: '0.2.0' })
     }
 
+    // REST endpoint: trigger podcast generation
+    if (url.pathname === '/api/generate' && request.method === 'POST') {
+      try {
+        const body: { repoUrl?: string } = await request.json()
+        if (!body.repoUrl) {
+          return Response.json({ error: 'repoUrl is required' }, { status: 400 })
+        }
+        const id = env.ORCHESTRATOR.idFromName(body.repoUrl)
+        const orchestrator = env.ORCHESTRATOR.get(id)
+        return orchestrator.fetch(request)
+      } catch (error) {
+        const message = error instanceof Error ? error.message : 'Invalid request'
+        return Response.json({ error: message }, { status: 400 })
+      }
+    }
+
     // Route agent WebSocket/RPC requests
     const agentResponse = await routeAgentRequest(request, env)
     if (agentResponse) return agentResponse
