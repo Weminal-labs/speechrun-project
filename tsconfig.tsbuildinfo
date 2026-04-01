@@ -1,0 +1,1 @@
+{"root":["./src/app.tsx","./src/main.tsx","./src/vite-env.d.ts","./src/components/asciilogo.tsx","./src/components/contextsidebar.tsx","./src/components/conversationpanel.tsx","./src/components/sandboxpanel.tsx","./src/components/tabnav.tsx","./src/components/terminalchrome.tsx","./src/hooks/use-podcast.ts"],"version":"6.0.2"}

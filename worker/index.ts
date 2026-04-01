@@ -29,8 +29,8 @@ export default {
       }
     }
 
-    // Serve audio files from R2
-    if (url.pathname.startsWith('/api/audio/')) {
+    // Serve audio files from R2 (when R2 is enabled)
+    if (url.pathname.startsWith('/api/audio/') && env.AUDIO_BUCKET) {
       const key = url.pathname.replace('/api/audio/', '')
       const object = await env.AUDIO_BUCKET.get(key)
       if (!object) return new Response('Not found', { status: 404 })

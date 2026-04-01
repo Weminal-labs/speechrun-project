@@ -198,8 +198,8 @@ Keep the analysis focused and opinionated — this will fuel a PM vs Developer d
   }
 
   private async generateAudio(): Promise<void> {
-    if (!this.env.ELEVENLABS_API_KEY) {
-      // Skip audio generation if no API key configured
+    if (!this.env.ELEVENLABS_API_KEY || !this.env.AUDIO_BUCKET) {
+      // Skip audio generation if no API key or R2 bucket configured
       this.setState({ ...this.state, status: 'complete' })
       return
     }
@@ -219,7 +219,7 @@ Keep the analysis focused and opinionated — this will fuel a PM vs Developer d
         })
 
         const key = await uploadAudioToR2(
-          this.env.AUDIO_BUCKET,
+          this.env.AUDIO_BUCKET!,
           sessionId,
           i,
           audioData,

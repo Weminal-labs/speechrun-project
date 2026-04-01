@@ -23,10 +23,12 @@
   "ai": {
     "binding": "AI"
   },
-  "r2_buckets": [
-    {
-      "binding": "AUDIO_BUCKET",
-      "bucket_name": "speechrun-audio"
-    }
-  ]
+  // R2 disabled until enabled in CF dashboard
+  // "r2_buckets": [
+  //   {
+  //     "binding": "AUDIO_BUCKET",
+  //     "bucket_name": "speechrun-audio"
+  //   }
+  // ]
+  "vars": {}
 }
