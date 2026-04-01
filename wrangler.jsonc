@@ -1,6 +1,6 @@
 {
   "name": "speechrun",
-  "account_id": "c385e678885a782dee108d4fb163132c",
+  "account_id": "52cb969c099635516787d017aab0559b",
   "main": "./worker/index.ts",
   "compatibility_date": "2026-03-17",
   "compatibility_flags": ["nodejs_compat"],
