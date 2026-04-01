@@ -29,6 +29,20 @@ export default {
       }
     }
 
+    // Serve audio files from R2
+    if (url.pathname.startsWith('/api/audio/')) {
+      const key = url.pathname.replace('/api/audio/', '')
+      const object = await env.AUDIO_BUCKET.get(key)
+      if (!object) return new Response('Not found', { status: 404 })
+
+      return new Response(object.body, {
+        headers: {
+          'Content-Type': 'audio/mpeg',
+          'Cache-Control': 'public, max-age=86400',
+        },
+      })
+    }
+
     // Route agent WebSocket/RPC requests
     const agentResponse = await routeAgentRequest(request, env)
     if (agentResponse) return agentResponse

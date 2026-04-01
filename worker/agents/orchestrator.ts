@@ -3,6 +3,7 @@ import type { Env, OrchestratorState, ContextData, DialogueTurn, GenerationResul
 import { parseGithubUrl, fetchRepoMetadata, fetchFileTree, fetchMultipleFiles } from '../utils/github-client'
 import { selectKeyFiles } from '../utils/file-selector'
 import { TOPIC_GENERATION_PROMPT } from '../utils/prompts'
+import { generateSpeech, uploadAudioToR2 } from '../utils/elevenlabs-client'
 
 export class Orchestrator extends Agent<Env, OrchestratorState> {
   initialState: OrchestratorState = {
@@ -42,6 +43,9 @@ export class Orchestrator extends Agent<Env, OrchestratorState> {
 
       // Step 7: Run multi-agent dialogue
       await this.runDialogue()
+
+      // Step 8: Generate audio via ElevenLabs
+      await this.generateAudio()
 
       return { success: true, turnCount: this.state.turns.length }
     } catch (error) {
@@ -191,5 +195,44 @@ Keep the analysis focused and opinionated — this will fuel a PM vs Developer d
       .map((t: string) => t.trim())
       .filter((t: string) => t.length > 0)
       .slice(0, 5)
+  }
+
+  private async generateAudio(): Promise<void> {
+    if (!this.env.ELEVENLABS_API_KEY) {
+      // Skip audio generation if no API key configured
+      this.setState({ ...this.state, status: 'complete' })
+      return
+    }
+
+    this.setState({ ...this.state, status: 'generating-audio' })
+
+    const sessionId = this.name
+    const updatedTurns = [...this.state.turns]
+
+    for (let i = 0; i < updatedTurns.length; i++) {
+      const turn = updatedTurns[i]
+      try {
+        const audioData = await generateSpeech({
+          text: turn.text,
+          speaker: turn.speaker,
+          apiKey: this.env.ELEVENLABS_API_KEY,
+        })
+
+        const key = await uploadAudioToR2(
+          this.env.AUDIO_BUCKET,
+          sessionId,
+          i,
+          audioData,
+        )
+
+        updatedTurns[i] = { ...turn, audioUrl: `/api/audio/${key}` }
+        this.setState({ ...this.state, turns: updatedTurns })
+      } catch (error) {
+        // Graceful degradation: turn stays text-only
+        console.error(`TTS failed for turn ${i}: ${error instanceof Error ? error.message : error}`)
+      }
+    }
+
+    this.setState({ ...this.state, turns: updatedTurns, status: 'complete' })
   }
 }
