@@ -2,7 +2,7 @@ import { Agent, callable } from 'agents'
 import type { Env, OrchestratorState, ContextData, DialogueTurn, GenerationResult } from '../types'
 import { parseGithubUrl, fetchRepoMetadata, fetchFileTree, fetchMultipleFiles } from '../utils/github-client'
 import { selectKeyFiles } from '../utils/file-selector'
-import { TOPIC_GENERATION_PROMPT } from '../utils/prompts'
+import { NOVA_SYSTEM_PROMPT, AERO_SYSTEM_PROMPT, TOPIC_GENERATION_PROMPT, buildTurnPrompt } from '../utils/prompts'
 import { generateSpeech, uploadAudioToR2 } from '../utils/elevenlabs-client'
 
 export class Orchestrator extends Agent<Env, OrchestratorState> {
@@ -19,32 +19,18 @@ export class Orchestrator extends Agent<Env, OrchestratorState> {
     try {
       this.setState({ ...this.state, repoUrl, status: 'fetching', error: null, turns: [] })
 
-      // Step 1: Parse and validate GitHub URL
       const { owner, repo } = parseGithubUrl(repoUrl)
-
-      // Step 2: Fetch repo metadata
       const metadata = await fetchRepoMetadata(owner, repo, this.env.GITHUB_TOKEN)
-
-      // Step 3: Fetch file tree
       const fileTree = await fetchFileTree(owner, repo, metadata.defaultBranch, this.env.GITHUB_TOKEN)
-
-      // Step 4: Select key files
       const selectedFiles = selectKeyFiles(fileTree)
-
-      // Step 5: Fetch file contents
       const keyFiles = await fetchMultipleFiles(owner, repo, selectedFiles, this.env.GITHUB_TOKEN)
 
       this.setState({ ...this.state, status: 'analyzing' })
 
-      // Step 6: Generate context via Workers AI
       const context = await this.generateContext(metadata, fileTree, keyFiles)
-
       this.setState({ ...this.state, context })
 
-      // Step 7: Run multi-agent dialogue
       await this.runDialogue()
-
-      // Step 8: Generate audio via ElevenLabs
       await this.generateAudio()
 
       return { success: true, turnCount: this.state.turns.length }
@@ -64,7 +50,6 @@ export class Orchestrator extends Agent<Env, OrchestratorState> {
       .map(([path, content]) => `--- ${path} ---\n${content}`)
       .join('\n\n')
 
-    // Truncate total context to ~30K chars to stay within LLM limits
     const truncatedContents = fileContentsStr.length > 30000
       ? fileContentsStr.slice(0, 30000) + '\n\n... (truncated)'
       : fileContentsStr
@@ -94,7 +79,6 @@ Provide a concise analysis covering:
 Keep the analysis focused and opinionated — this will fuel a PM vs Developer debate podcast.`
 
     const response = await this.env.AI.run(
-      // Model identifier — Workers AI routes to the correct model
       '@cf/meta/llama-3.1-70b-instruct' as keyof AiModels,
       {
         messages: [
@@ -123,51 +107,55 @@ Keep the analysis focused and opinionated — this will fuel a PM vs Developer d
     const topics = await this.generateTopics()
 
     for (const topic of topics) {
-      // Nova speaks first
-      const novaTurn = await this.callAgentWithRetry('nova', topic)
+      // Nova (PM) speaks first
+      const novaTurn = await this.generateTurn('nova', topic)
       if (novaTurn) {
         this.setState({ ...this.state, turns: [...this.state.turns, novaTurn] })
       }
 
-      // Aero responds
-      const aeroTurn = await this.callAgentWithRetry('aero', topic)
+      // Aero (Dev) responds
+      const aeroTurn = await this.generateTurn('aero', topic)
       if (aeroTurn) {
         this.setState({ ...this.state, turns: [...this.state.turns, aeroTurn] })
       }
     }
   }
 
-  private async callAgentWithRetry(
-    agent: 'nova' | 'aero',
+  private async generateTurn(
+    speaker: 'nova' | 'aero',
     topic: string,
   ): Promise<DialogueTurn | null> {
-    const namespace = agent === 'nova' ? this.env.NOVA : this.env.AERO
-    const id = namespace.idFromName(`${agent}-${this.name}`)
-    const stub = namespace.get(id)
+    const systemPrompt = speaker === 'nova' ? NOVA_SYSTEM_PROMPT : AERO_SYSTEM_PROMPT
+    const isFirstInTopic = this.state.turns.length === 0
+      || this.state.turns[this.state.turns.length - 1]?.speaker !== speaker
 
-    const input = {
+    const prompt = buildTurnPrompt(
       topic,
-      context: this.state.context!,
-      previousTurns: this.state.turns,
-    }
+      this.state.context!.summary,
+      this.state.turns.slice(-6),
+      isFirstInTopic,
+    )
 
     for (let attempt = 0; attempt < 2; attempt++) {
       try {
-        // Call the agent's generateTurn via fetch (DO RPC)
-        const response = await stub.fetch(new Request('http://internal/callable/generateTurn', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify([input]),
-        }))
+        const response = await this.env.AI.run(
+          '@cf/meta/llama-3.1-70b-instruct' as keyof AiModels,
+          {
+            messages: [
+              { role: 'system', content: systemPrompt },
+              { role: 'user', content: prompt },
+            ],
+          } as Record<string, unknown>,
+        )
 
-        if (!response.ok) {
-          throw new Error(`Agent ${agent} returned ${response.status}`)
-        }
+        const text = typeof response === 'object' && 'response' in response
+          ? (response as { response: string }).response
+          : String(response)
 
-        return await response.json() as DialogueTurn
+        return { speaker, text, timestamp: Date.now() }
       } catch (error) {
         if (attempt === 1) {
-          console.error(`Agent ${agent} failed after retry: ${error instanceof Error ? error.message : error}`)
+          console.error(`Turn generation failed for ${speaker}: ${error instanceof Error ? error.message : error}`)
           return null
         }
       }
@@ -199,7 +187,6 @@ Keep the analysis focused and opinionated — this will fuel a PM vs Developer d
 
   private async generateAudio(): Promise<void> {
     if (!this.env.ELEVENLABS_API_KEY || !this.env.AUDIO_BUCKET) {
-      // Skip audio generation if no API key or R2 bucket configured
       this.setState({ ...this.state, status: 'complete' })
       return
     }
@@ -228,7 +215,6 @@ Keep the analysis focused and opinionated — this will fuel a PM vs Developer d
         updatedTurns[i] = { ...turn, audioUrl: `/api/audio/${key}` }
         this.setState({ ...this.state, turns: updatedTurns })
       } catch (error) {
-        // Graceful degradation: turn stays text-only
         console.error(`TTS failed for turn ${i}: ${error instanceof Error ? error.message : error}`)
       }
     }
