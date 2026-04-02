@@ -31,5 +31,10 @@
 - Create a fine-grained personal access token at github.com/settings/tokens with "Contents: read" permission
 
 ### Local Development
-- Set secrets locally via `wrangler secret put ELEVENLABS_API_KEY`
-- Or use a `.dev.vars` file (gitignored) for local development
+- For local `wrangler dev`, create a `.dev.vars` file (gitignored) in the project root:
+  ```
+  ELEVENLABS_API_KEY=sk_...
+  GITHUB_TOKEN=ghp_... (optional)
+  ```
+- For production `wrangler deploy`, use `wrangler secret put ELEVENLABS_API_KEY` to set secrets on Cloudflare's edge
+- The `.dev.vars` file is automatically loaded by Wrangler in development and is never committed

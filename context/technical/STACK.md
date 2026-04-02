@@ -9,8 +9,8 @@
 
 ## Backend
 - **Cloudflare Workers** — serverless edge runtime (TypeScript)
-- **Durable Objects** — stateful agents with WebSocket support and built-in SQLite
-- **@cloudflare/agents SDK** — agent framework for Durable Object classes
+- **Durable Objects** — stateful session store with WebSocket support and built-in SQLite (plain `DurableObject` class, not agents SDK)
+- **Workers AI** — LLM inference (Llama 3.1 8B FP8 in Phase 2, can upgrade to 70B)
 
 ## Database
 - **Durable Object SQLite** — per-agent persistent storage for context, transcripts, and dialogue state
