@@ -1,6 +1,6 @@
 import { Agent, callable } from 'agents'
-import type { Env, AgentTurnInput, DialogueTurn } from '../types'
-import { AERO_SYSTEM_PROMPT, buildTurnPrompt } from '../utils/prompts'
+import type { Env, AgentTurnInput, AgentQAInput, DialogueTurn } from '../types'
+import { AERO_SYSTEM_PROMPT, AERO_QA_PROMPT, buildTurnPrompt, buildQAPrompt } from '../utils/prompts'
 
 interface AeroState {
   persona: string
@@ -19,13 +19,13 @@ export class Aero extends Agent<Env, AeroState> {
 
     const prompt = buildTurnPrompt(
       topic,
-      context.summary,
+      `${context.project.name}: ${context.project.summary}`,
       previousTurns.slice(-6),
       isFirstInTopic,
     )
 
     const response = await this.env.AI.run(
-      '@cf/meta/llama-3.1-70b-instruct' as keyof AiModels,
+      '@cf/meta/llama-3.3-70b-instruct-fp8-fast' as keyof AiModels,
       {
         messages: [
           { role: 'system', content: AERO_SYSTEM_PROMPT },
@@ -38,10 +38,26 @@ export class Aero extends Agent<Env, AeroState> {
       ? (response as { response: string }).response
       : String(response)
 
-    return {
-      speaker: 'aero',
-      text,
-      timestamp: Date.now(),
-    }
+    return { speaker: 'aero', text, timestamp: Date.now() }
+  }
+
+  @callable()
+  async answerQuestion(input: AgentQAInput): Promise<string> {
+    const { question, context, chatHistory } = input
+    const prompt = buildQAPrompt(question, context, chatHistory)
+
+    const response = await this.env.AI.run(
+      '@cf/meta/llama-3.3-70b-instruct-fp8-fast' as keyof AiModels,
+      {
+        messages: [
+          { role: 'system', content: AERO_QA_PROMPT },
+          { role: 'user', content: prompt },
+        ],
+      } as Record<string, unknown>,
+    )
+
+    return typeof response === 'object' && 'response' in response
+      ? (response as { response: string }).response
+      : String(response)
   }
 }

@@ -4,12 +4,14 @@
 @import '@fontsource/jetbrains-mono/700.css';
 
 @theme {
-  --color-terminal-bg: #1a237e;
+  --color-terminal-bg: #0f0f1a;
+  --color-terminal-surface: #16162a;
   --color-terminal-text: #e8eaf6;
-  --color-terminal-accent: #7986cb;
-  --color-terminal-border: #3949ab;
-  --color-terminal-dim: #5c6bc0;
-  --color-terminal-bright: #c5cae9;
+  --color-terminal-accent: #f6821f;
+  --color-terminal-accent-dim: #f6821f80;
+  --color-terminal-border: #2a2a40;
+  --color-terminal-dim: #6b6b8a;
+  --color-terminal-bright: #ffffff;
   --color-dot-red: #ff5f57;
   --color-dot-yellow: #febc2e;
   --color-dot-green: #28c840;
@@ -24,7 +26,7 @@
 
 html, body, #root {
   height: 100%;
-  background-color: var(--color-terminal-bg);
+  background: linear-gradient(135deg, #f6821f, #e55d0a, #f6821f);
   font-family: var(--font-mono);
 }
 
@@ -44,4 +46,24 @@ html, body, #root {
 ::-webkit-scrollbar-thumb {
   background: var(--color-terminal-border);
   border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-terminal-accent);
+}
+
+/* Message animations */
+.animate-in {
+  animation: messageIn 0.3s ease-out;
+}
+
+@keyframes messageIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }

@@ -1,4 +1,4 @@
-// --- Chat types ---
+// Types shared between worker and frontend — no Cloudflare-specific globals here
 
 export interface ChatMessage {
   id: string
@@ -12,8 +12,6 @@ export interface ChatMessage {
   }
 }
 
-// --- Structured Context (Arche-inspired) ---
-
 export interface StructuredContext {
   project: {
     name: string
@@ -22,13 +20,11 @@ export interface StructuredContext {
     primaryLanguage: string
     stars?: number
   }
-
   stack: Array<{
     name: string
     role: string
-    category: 'frontend' | 'backend' | 'database' | 'infrastructure' | 'tooling' | 'testing'
+    category: string
   }>
-
   features: Array<{
     id: string
     name: string
@@ -36,20 +32,17 @@ export interface StructuredContext {
     complexity: 'low' | 'medium' | 'high'
     relatedFiles: string[]
   }>
-
   architecture: {
     pattern: string
     description: string
     layers: string[]
     dataFlow: string
   }
-
   decisions: Array<{
     title: string
     rationale: string
     tradeoff: string
   }>
-
   quality: {
     strengths: string[]
     concerns: string[]
@@ -57,16 +50,12 @@ export interface StructuredContext {
   }
 }
 
-// --- Dialogue types ---
-
 export interface DialogueTurn {
   speaker: 'nova' | 'aero'
   text: string
   audioUrl?: string
   timestamp: number
 }
-
-// --- Orchestrator status (state machine) ---
 
 export type OrchestratorStatus =
   | 'idle'
@@ -79,16 +68,12 @@ export type OrchestratorStatus =
   | 'autonomous'
   | 'paused'
 
-// --- Autonomous mode config ---
-
 export interface AutonomousConfig {
-  turnsPerTopic: number       // exchanges per topic (default 3 = 6 turns)
-  delayBetweenTurns: number   // ms between turns (default 2000)
-  totalTopics: number         // max topics to discuss (default 5)
-  waitForAudio: boolean       // pace by audio playback (default true)
+  turnsPerTopic: number
+  delayBetweenTurns: number
+  totalTopics: number
+  waitForAudio: boolean
 }
-
-// --- Stream events (sent via raw WebSocket, not setState) ---
 
 export type StreamEvent =
   | { event: 'token'; messageId: string; token: string }
@@ -97,8 +82,6 @@ export type StreamEvent =
   | { event: 'thinking'; speaker: 'nova' | 'aero' }
   | { event: 'autonomous-topic'; topic: string; topicIndex: number; totalTopics: number }
   | { event: 'autonomous-done' }
-
-// --- Orchestrator state ---
 
 export interface OrchestratorState {
   sessionId: string
@@ -112,36 +95,4 @@ export interface OrchestratorState {
   autonomousConfig: AutonomousConfig | null
   currentTopic: string | null
   topicIndex: number
-}
-
-// --- Env ---
-
-export interface Env {
-  AI: Ai
-  ORCHESTRATOR: DurableObjectNamespace
-  NOVA: DurableObjectNamespace
-  AERO: DurableObjectNamespace
-  AUDIO_BUCKET?: R2Bucket
-  GITHUB_TOKEN?: string
-  ELEVENLABS_API_KEY?: string
-}
-
-// --- Agent callable inputs ---
-
-export interface AgentTurnInput {
-  topic: string
-  context: StructuredContext
-  previousTurns: DialogueTurn[]
-}
-
-export interface AgentQAInput {
-  question: string
-  context: StructuredContext
-  chatHistory: ChatMessage[]
-}
-
-export interface GenerationResult {
-  success: boolean
-  turnCount: number
-  error?: string
 }

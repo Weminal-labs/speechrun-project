@@ -1,0 +1,3 @@
+# Exclude large GIF from Cloudflare asset upload (70MB exceeds 25MB limit)
+# For local Remotion rendering, access directly from public/
+ascii-art_gif.gif

@@ -7,13 +7,19 @@
     "dev": "vite",
     "build": "tsc -b && tsc --noEmit -p tsconfig.worker.json && vite build",
     "preview": "vite preview",
-    "deploy": "npm run build && wrangler deploy"
+    "deploy": "npm run build && wrangler deploy",
+    "remotion:studio": "npx remotion studio src/remotion/index.ts",
+    "remotion:render": "npx remotion render src/remotion/index.ts SpeechRunReel out/reel.mp4"
   },
   "dependencies": {
     "@fontsource/jetbrains-mono": "^5.2.8",
+    "@remotion/cli": "^4.0.443",
+    "@remotion/player": "^4.0.443",
+    "@remotion/transitions": "^4.0.443",
     "agents": "^0.9.0",
     "react": "^19.2.4",
-    "react-dom": "^19.2.4"
+    "react-dom": "^19.2.4",
+    "remotion": "^4.0.443"
   },
   "devDependencies": {
     "@cloudflare/vite-plugin": "^1.30.2",

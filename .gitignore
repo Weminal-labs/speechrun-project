@@ -5,3 +5,8 @@ dist
 .dev.vars
 .wrangler
 .DS_Store
+
+# Rendered videos and large assets
+out/
+*.gif
+tsconfig.*.tsbuildinfo

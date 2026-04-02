@@ -25,3 +25,5 @@ bucket_name = "speechrun-audio"
 
 [observability]
 enabled = true
+
+# Secrets managed via `wrangler secret put` — see .dev.vars for local dev

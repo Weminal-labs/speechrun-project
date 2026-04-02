@@ -1,45 +1,81 @@
-import { useState } from 'react'
+import { useEffect, useRef } from 'react'
 import TerminalChrome from './components/TerminalChrome'
 import TabNav from './components/TabNav'
 import AsciiLogo from './components/AsciiLogo'
-import ContextSidebar from './components/ContextSidebar'
+import ContextPanel from './components/ContextPanel'
 import ConversationPanel from './components/ConversationPanel'
 import SandboxPanel from './components/SandboxPanel'
-import { usePodcast } from './hooks/use-podcast'
+import { useChat } from './hooks/use-chat'
+import { useSessions } from './hooks/use-sessions'
 
 function App() {
-  const { state, startGeneration, isConnected } = usePodcast()
-  const [selectedFile, setSelectedFile] = useState<string | null>(null)
+  const { sessions, activeId, createSession, switchSession, deleteSession, renameSession } = useSessions()
+  const {
+    state, sendMessage, isConnected,
+    streamingMessage, thinkingSpeaker,
+    startAutonomous, pauseAutonomous, resumeAutonomous, stopAutonomous, currentTopic,
+    currentlyPlaying, playingTurnIndex, isPlaying, audioProgress, audioDuration,
+    playTurnAudio, togglePlayPause, seekAudio,
+  } = useChat(activeId)
+
+  const prevContextRef = useRef<{ sessionId: string; name: string | null }>({ sessionId: '', name: null })
+
+  useEffect(() => {
+    const name = state.context?.project?.name
+    if (!name) return
+    if (prevContextRef.current.sessionId === activeId && prevContextRef.current.name === name) return
+    prevContextRef.current = { sessionId: activeId, name }
+    renameSession(activeId, name)
+  }, [state.context?.project?.name, activeId, renameSession])
 
   return (
     <div className="font-mono">
       <TerminalChrome>
         <TabNav />
         <AsciiLogo />
-        {/* 3-Panel Layout */}
         <div className="flex-1 flex min-h-0 border-t border-terminal-border">
-          {/* Left - Context Sidebar */}
           <div className="w-[20%] border-r border-terminal-border">
-            <ContextSidebar
+            <ContextPanel
               context={state.context}
-              selectedFile={selectedFile}
-              onClearFile={() => setSelectedFile(null)}
+              sessions={sessions}
+              activeId={activeId}
+              onSwitch={switchSession}
+              onNew={createSession}
+              onDelete={deleteSession}
             />
           </div>
-          {/* Center - Conversation */}
           <div className="w-[50%] border-r border-terminal-border">
             <ConversationPanel
+              key={activeId}
+              messages={state.messages}
               turns={state.turns}
               status={state.status}
-              error={state.error}
               isConnected={isConnected}
-              onSubmit={startGeneration}
-              onFileClick={(filePath) => setSelectedFile(filePath)}
+              hasContext={!!state.context}
+              onSendMessage={sendMessage}
+              streamingMessage={streamingMessage}
+              thinkingSpeaker={thinkingSpeaker}
+              onStartAutonomous={startAutonomous}
+              onPauseAutonomous={pauseAutonomous}
+              onResumeAutonomous={resumeAutonomous}
+              onStopAutonomous={stopAutonomous}
+              currentTopic={currentTopic}
+              currentlyPlayingId={currentlyPlaying}
+              playingTurnIndex={playingTurnIndex}
+              isAudioPlaying={isPlaying}
+              audioProgress={audioProgress}
+              audioDuration={audioDuration}
+              onPlayTurn={playTurnAudio}
+              onTogglePlayPause={togglePlayPause}
+              onSeekAudio={seekAudio}
             />
           </div>
-          {/* Right - Sandbox */}
           <div className="w-[30%]">
-            <SandboxPanel />
+            <SandboxPanel
+              context={state.context}
+              messages={state.messages}
+              status={state.status}
+            />
           </div>
         </div>
       </TerminalChrome>
