@@ -1,0 +1,34 @@
+{
+  "name": "speechrun",
+  "account_id": "52cb969c099635516787d017aab0559b",
+  "main": "./worker/index.ts",
+  "compatibility_date": "2026-03-17",
+  "compatibility_flags": ["nodejs_compat"],
+  "assets": {
+    "not_found_handling": "single-page-application"
+  },
+  "durable_objects": {
+    "bindings": [
+      { "name": "ORCHESTRATOR", "class_name": "Orchestrator" },
+      { "name": "NOVA", "class_name": "Nova" },
+      { "name": "AERO", "class_name": "Aero" }
+    ]
+  },
+  "migrations": [
+    {
+      "tag": "v1",
+      "new_sqlite_classes": ["Orchestrator", "Nova", "Aero"]
+    }
+  ],
+  "ai": {
+    "binding": "AI"
+  },
+  // R2 disabled until enabled in CF dashboard
+  // "r2_buckets": [
+  //   {
+  //     "binding": "AUDIO_BUCKET",
+  //     "bucket_name": "speechrun-audio"
+  //   }
+  // ]
+  "vars": {}
+}
